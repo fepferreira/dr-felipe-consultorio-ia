@@ -39,13 +39,15 @@ class TwilioService:
         try:
             # Remove espaços e caracteres especiais
             numero_limpo = para.replace(" ", "").replace("-", "")
-            # Formata o número para o padrão Twilio
+            # Formata o número para o padrão Twilio (com whatsapp: prefix)
             numero_formatado = f"whatsapp:{numero_limpo}"
+            # Formata o número de origem (também precisa de whatsapp: prefix)
+            from_number = f"whatsapp:{self.whatsapp_number}" if not self.whatsapp_number.startswith("whatsapp:") else self.whatsapp_number
             
             # Prepara payload
             kwargs = {
                 "body": mensagem,
-                "from_": self.whatsapp_number,
+                "from_": from_number,
                 "to": numero_formatado
             }
             
