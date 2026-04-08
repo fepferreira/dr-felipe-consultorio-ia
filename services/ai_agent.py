@@ -4,8 +4,8 @@ Serviço de Agente de IA para atendimento de pacientes
 
 import json
 import logging
-from typing import Dict, List, Optional, Tuple
-import openai
+from typing import Dict, List, Optional
+from openai import OpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class AIAgent:
             api_key: Chave de API OpenAI
             model: Modelo a usar
         """
-        openai.api_key = api_key
+        self.client = OpenAI(api_key=api_key)
         self.model = model
         self.conversation_history = {}
         
@@ -66,62 +66,44 @@ FLUXO DE CONVERSA:
 4. Explicar abordagem do Dr. Felipe
 5. Oferecer agendamento ou próximos passos"""
     
-    def processar_mensagem(self, telefone: str, mensagem: str, historico_conversa: List[Dict] = None) -> Tuple[str, Dict]:
+    async def processar_mensagem(self, mensagem: str, dados_paciente: Dict = None, perguntas_urgencia: List = None) -> str:
         """
         Processa uma mensagem do paciente e retorna resposta da IA
         
         Args:
-            telefone: Telefone do paciente
             mensagem: Mensagem do paciente
-            historico_conversa: Histórico anterior da conversa
+            dados_paciente: Dados do paciente
+            perguntas_urgencia: Perguntas de triagem de urgência
             
         Returns:
-            Tupla com (resposta_ia, metadata)
+            Resposta da IA
         """
         try:
-            # Inicializa histórico se não existir
-            if telefone not in self.conversation_history:
-                self.conversation_history[telefone] = []
+            # Prepara contexto adicional
+            contexto = ""
+            if dados_paciente:
+                contexto = f"\nDados do paciente: {json.dumps(dados_paciente, ensure_ascii=False)}"
             
-            # Adiciona mensagem do usuário ao histórico
-            self.conversation_history[telefone].append({
-                "role": "user",
-                "content": mensagem
-            })
-            
-            # Limita histórico aos últimos 10 mensagens para economizar tokens
-            if len(self.conversation_history[telefone]) > 20:
-                self.conversation_history[telefone] = self.conversation_history[telefone][-20:]
-            
-            # Chama OpenAI
-            response = openai.ChatCompletion.create(
+            # Chama OpenAI com nova API
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    *self.conversation_history[telefone]
+                    {"role": "system", "content": self.system_prompt + contexto},
+                    {"role": "user", "content": mensagem}
                 ],
                 temperature=0.7,
                 max_tokens=500
             )
             
-            resposta = response['choices'][0]['message']['content']
+            resposta = response.choices[0].message.content
             
-            # Adiciona resposta ao histórico
-            self.conversation_history[telefone].append({
-                "role": "assistant",
-                "content": resposta
-            })
+            logger.info(f"Resposta gerada pela IA")
             
-            # Extrai metadata da resposta
-            metadata = self._extrair_metadata(resposta, telefone)
-            
-            logger.info(f"Resposta gerada para {telefone}")
-            
-            return resposta, metadata
+            return resposta
             
         except Exception as e:
             logger.error(f"Erro ao processar mensagem com IA: {str(e)}")
-            return "Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?", {}
+            return "Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?"
     
     def _extrair_metadata(self, resposta: str, telefone: str) -> Dict:
         """

@@ -40,7 +40,7 @@ app = FastAPI(
 twilio_service = TwilioService(
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
-    TWILIO_WHATSAPP_NUMBER
+    "+1 415 523 8886"  # Número do sandbox do Twilio
 )
 
 ai_agent = AIAgent(OPENAI_API_KEY, OPENAI_MODEL)
