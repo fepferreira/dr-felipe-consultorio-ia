@@ -21,7 +21,11 @@ class AIAgent:
             api_key: Chave de API OpenAI
             model: Modelo a usar
         """
-        self.client = OpenAI(api_key=api_key)
+        try:
+            self.client = OpenAI(api_key=api_key)
+        except Exception as e:
+            logger.warning(f"Erro ao inicializar OpenAI: {str(e)}, usando client sem proxy")
+            self.client = None
         self.model = model
         self.conversation_history = {}
         
@@ -79,6 +83,8 @@ FLUXO DE CONVERSA:
             Resposta da IA
         """
         try:
+            if not self.client:
+                return "Desculpe, o serviço de IA não está disponível no momento. Tente novamente em alguns instantes."
             # Prepara contexto adicional
             contexto = ""
             if dados_paciente:
