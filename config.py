@@ -117,9 +117,6 @@ PERGUNTAS_URGENCIA = [
 # Limiar para considerar urgência
 URGENCIA_THRESHOLD = 2  # Se 2 ou mais sintomas críticos = urgência
 
-# ==================== BANCO DE DADOS ====================
-DATABASE_URL = "sqlite:///./consultorio.db"
-
 # ==================== LOGGING ====================
 LOG_LEVEL = "INFO"
 LOG_FILE = "consultorio.log"
